@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Image, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Speech from 'expo-speech';
+import { Ionicons } from '@expo/vector-icons';
 import { useOculos } from '../oculos/useOculos';
 import { Evento } from '../oculos/protocolo';
 import { baixarFotoNova, mensagemDoCiclo } from '../oculos/ciclo';
@@ -67,7 +68,7 @@ export default function Inicio() {
       setFalando(true);
       falar(resultado, () => setFalando(false));
     } catch (e) {
-      console.log('ERRO NO CICLO:', e);
+      console.log('ERRO NO CICLO:', e, (e as Error)?.stack);
       const mensagem = mensagemDoCiclo(e);
       setTexto(mensagem);
       falar(mensagem);
@@ -135,6 +136,12 @@ export default function Inicio() {
         accessibilityHint={falando ? undefined : 'Lê em voz alta o último texto encontrado'}
         style={({ pressed }) => [estilos.botao, pressed && estilos.botaoPressionado]}
       >
+        <Ionicons
+          name={falando ? 'stop-circle' : 'volume-high'}
+          size={72}
+          color={COR.sobreDestaque}
+          importantForAccessibility="no"
+        />
         <Text style={estilos.botaoTexto}>{falando ? 'Parar' : 'Ouvir de novo'}</Text>
       </Pressable>
     </SafeAreaView>
@@ -155,7 +162,8 @@ const estilos = StyleSheet.create({
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
+    gap: 8,
   },
   botaoPressionado: { opacity: 0.8 },
-  botaoTexto: { color: COR.sobreDestaque, fontSize: 34, fontWeight: '700' },
+  botaoTexto: { color: COR.sobreDestaque, fontSize: 52, fontWeight: '700', textAlign: 'center' },
 });
