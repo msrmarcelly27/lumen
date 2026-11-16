@@ -67,6 +67,7 @@ export default function Inicio() {
       setFalando(true);
       falar(resultado, () => setFalando(false));
     } catch (e) {
+      console.log('ERRO NO CICLO:', e);
       const mensagem = mensagemDoCiclo(e);
       setTexto(mensagem);
       falar(mensagem);

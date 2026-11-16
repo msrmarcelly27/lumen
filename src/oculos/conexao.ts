@@ -6,6 +6,7 @@ import {
   Empacotador,
   ENDERECO_OCULOS,
   Evento,
+  InfoWifi,
   Receptor,
   UUID_ESCRITA,
   UUID_NOTIFICACAO,
@@ -32,6 +33,7 @@ export class ConexaoOculos {
   private inscricoes: Subscription[] = [];
   private heartbeat: ReturnType<typeof setInterval> | null = null;
   private _estado: EstadoConexao = 'desconectado';
+  private esperaWifi: ((info: InfoWifi | null) => void) | null = null;
 
   constructor(private ouvintes: Ouvintes) {}
 
@@ -89,6 +91,33 @@ export class ConexaoOculos {
     );
   }
 
+  /** Pede ao óculos para ligar o Wi-Fi e devolve o nome, a senha da rede e os dados do FTP. */
+  async ligarWifi(): Promise<InfoWifi> {
+    const resposta = new Promise<InfoWifi | null>((resolve, rejeitar) => {
+      this.esperaWifi = resolve;
+      setTimeout(() => {
+        if (this.esperaWifi === resolve) {
+          this.esperaWifi = null;
+          rejeitar(new Error('WIFI_SEM_RESPOSTA'));
+        }
+      }, 10_000);
+    });
+    await this.enviar(Comandos.ligarWifi());
+    const info = await resposta;
+    if (!info) throw new Error('WIFI_RECUSADO');
+    return info;
+  }
+
+  /** Espera o Bluetooth voltar (ele pode cair quando o Wi-Fi do óculos liga). */
+  async aguardarConexao(limiteMs: number): Promise<boolean> {
+    const fim = Date.now() + limiteMs;
+    while (Date.now() < fim) {
+      if (this._estado === 'conectado') return true;
+      await new Promise<void>((r) => setTimeout(r, 500));
+    }
+    return false;
+  }
+
   encerrar(): void {
     const dispositivo = this.dispositivo;
     this.limpar();
@@ -99,6 +128,11 @@ export class ConexaoOculos {
   // ---------- interno ----------
 
   private tratar(evento: Evento) {
+    if (evento.tipo === 'wifi' && this.esperaWifi) {
+      const responder = this.esperaWifi;
+      this.esperaWifi = null;
+      responder(evento.info);
+    }
     if (evento.tipo === 'foto') {
       this.enviar(Comandos.confirmarFoto()).catch(() => {}); // o app oficial confirma o aviso
     }
@@ -145,11 +179,15 @@ export class ConexaoOculos {
 async function pedirPermissoes(): Promise<boolean> {
   if (Platform.OS !== 'android') return true;
   if (Number(Platform.Version) >= 31) {
+    const P = PermissionsAndroid.PERMISSIONS;
+    // A localização não é usada pelo Bluetooth, mas o Wi-Fi precisa dela; pedimos tudo de uma vez.
     const resultado = await PermissionsAndroid.requestMultiple([
-      PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
-      PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+      P.BLUETOOTH_SCAN,
+      P.BLUETOOTH_CONNECT,
+      P.ACCESS_FINE_LOCATION,
     ]);
-    return Object.values(resultado).every((r) => r === PermissionsAndroid.RESULTS.GRANTED);
+    const ok = PermissionsAndroid.RESULTS.GRANTED;
+    return resultado[P.BLUETOOTH_SCAN] === ok && resultado[P.BLUETOOTH_CONNECT] === ok;
   }
   const resultado = await PermissionsAndroid.request(
     PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
