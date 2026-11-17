@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Speech from 'expo-speech';
 import { Ionicons } from '@expo/vector-icons';
@@ -110,9 +110,19 @@ export default function Inicio() {
 
   return (
     <SafeAreaView style={estilos.tela}>
-      <Text style={estilos.status} accessibilityRole="header" accessibilityLiveRegion="polite">
-        {status}
-      </Text>
+      <View style={estilos.linhaStatus}>
+        {!etapa && estado === 'conectado' && bateria !== null && (
+          <Ionicons
+            name={bateria >= 70 ? 'battery-full' : bateria >= 30 ? 'battery-half' : 'battery-dead'}
+            size={28}
+            color={bateria >= 30 ? COR.apagado : COR.destaque}
+            importantForAccessibility="no"
+          />
+        )}
+        <Text style={estilos.status} accessibilityRole="header" accessibilityLiveRegion="polite">
+          {status}
+        </Text>
+      </View>
 
       <ScrollView style={estilos.areaTexto} contentContainerStyle={estilos.areaTextoConteudo}>
         {foto && (
@@ -123,7 +133,15 @@ export default function Inicio() {
             accessibilityLabel="Última foto tirada pelo óculos"
           />
         )}
-        <Text style={estilos.rotulo}>Último texto lido</Text>
+        <View style={estilos.linhaRotulo}>
+          <Ionicons
+            name="document-text-outline"
+            size={22}
+            color={COR.destaque}
+            importantForAccessibility="no"
+          />
+          <Text style={estilos.rotulo}>Último texto lido</Text>
+        </View>
         <Text style={estilos.texto} selectable>
           {texto}
         </Text>
@@ -150,11 +168,13 @@ export default function Inicio() {
 
 const estilos = StyleSheet.create({
   tela: { flex: 1, backgroundColor: COR.fundo, paddingHorizontal: 20, paddingBottom: 20 },
-  status: { color: COR.apagado, fontSize: 18, paddingVertical: 16 },
+  linhaStatus: { flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 16 },
+  status: { color: COR.apagado, fontSize: 18, flexShrink: 1 },
   areaTexto: { flex: 1 },
   areaTextoConteudo: { paddingBottom: 24 },
   foto: { width: '100%', aspectRatio: 4 / 3, borderRadius: 16, marginBottom: 16 },
-  rotulo: { color: COR.destaque, fontSize: 16, fontWeight: '600', marginBottom: 8 },
+  linhaRotulo: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
+  rotulo: { color: COR.destaque, fontSize: 16, fontWeight: '600' },
   texto: { color: COR.texto, fontSize: 28, lineHeight: 38 },
   botao: {
     minHeight: '30%',
@@ -162,8 +182,9 @@ const estilos = StyleSheet.create({
     borderRadius: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 8,
+    flexDirection: 'row',
+    gap: 16,
   },
   botaoPressionado: { opacity: 0.8 },
-  botaoTexto: { color: COR.sobreDestaque, fontSize: 52, fontWeight: '700', textAlign: 'center' },
+  botaoTexto: { color: COR.sobreDestaque, fontSize: 64, fontWeight: '700', textAlign: 'center' },
 });
