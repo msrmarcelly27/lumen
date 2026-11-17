@@ -30,7 +30,7 @@ function falar(frase: string, aoTerminar?: () => void) {
   Speech.stop();
   Speech.speak(frase, {
     language: 'pt-BR',
-    rate: 1.0,
+    rate: 0.85, // 15% mais devagar, como no OCR da Marcelly: fica mais fácil acompanhar
     onDone: aoTerminar,
     onStopped: aoTerminar,
     onError: aoTerminar,
