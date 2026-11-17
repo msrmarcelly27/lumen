@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as Speech from 'expo-speech';
 import { Ionicons } from '@expo/vector-icons';
@@ -38,6 +38,9 @@ function falar(frase: string, aoTerminar?: () => void) {
 }
 
 export default function Inicio() {
+  // Letra do botão: grande no tablet, menor no celular, para caber sem quebrar.
+  const { width } = useWindowDimensions();
+  const tamanhoBotao = Math.min(64, width * 0.11);
   const [texto, setTexto] = useState(TEXTO_INICIAL);
   const [foto, setFoto] = useState<string | null>(null);
   const [etapa, setEtapa] = useState<string | null>(null);
@@ -156,11 +159,11 @@ export default function Inicio() {
       >
         <Ionicons
           name={falando ? 'stop-circle' : 'volume-high'}
-          size={72}
+          size={tamanhoBotao * 1.1}
           color={COR.sobreDestaque}
           importantForAccessibility="no"
         />
-        <Text style={estilos.botaoTexto}>{falando ? 'Parar' : 'Ouvir de novo'}</Text>
+        <Text style={[estilos.botaoTexto, { fontSize: tamanhoBotao }]}>{falando ? 'Parar' : 'Ouvir de novo'}</Text>
       </Pressable>
     </SafeAreaView>
   );
