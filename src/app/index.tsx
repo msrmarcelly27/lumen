@@ -40,7 +40,7 @@ function falar(frase: string, aoTerminar?: () => void) {
 export default function Inicio() {
   // Letra do botão: grande no tablet, menor no celular, para caber sem quebrar.
   const { width } = useWindowDimensions();
-  const tamanhoBotao = Math.min(64, width * 0.11);
+  const tamanhoBotao = Math.min(64, width * 0.09);
   const [texto, setTexto] = useState(TEXTO_INICIAL);
   const [foto, setFoto] = useState<string | null>(null);
   const [etapa, setEtapa] = useState<string | null>(null);
@@ -163,7 +163,11 @@ export default function Inicio() {
           color={COR.sobreDestaque}
           importantForAccessibility="no"
         />
-        <Text style={[estilos.botaoTexto, { fontSize: tamanhoBotao }]}>{falando ? 'Parar' : 'Ouvir de novo'}</Text>
+        <Text
+          style={[estilos.botaoTexto, { fontSize: tamanhoBotao }]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+        >{falando ? 'Parar' : 'Ouvir de novo'}</Text>
       </Pressable>
     </SafeAreaView>
   );
@@ -186,8 +190,9 @@ const estilos = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
-    gap: 16,
+    gap: 12,
+    paddingHorizontal: 16,
   },
   botaoPressionado: { opacity: 0.8 },
-  botaoTexto: { color: COR.sobreDestaque, fontSize: 64, fontWeight: '700', textAlign: 'center' },
+  botaoTexto: { color: COR.sobreDestaque, fontSize: 64, fontWeight: '700', textAlign: 'center', flexShrink: 1 },
 });
