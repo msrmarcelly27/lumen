@@ -9,10 +9,73 @@ import TextRecognition, { TextBlock } from '@react-native-ml-kit/text-recognitio
  * - junta palavras cortadas com hífen no fim da linha ("compu-" + "tador");
  * - corrige "0" e "1" lidos no lugar de "o" e "l" ("c0m" -> "com");
  * - arruma espaços e pontuação sem quebrar números ("3,50", "1.000", "10:30").
+ *
+ * Confiança: o ML Kit dá a cada linha uma nota de 0 a 1 (o quanto ele tem certeza da leitura).
+ * Linhas abaixo de CONFIANCA_MINIMA são descartadas, como o confianca_min do OCR em Python.
+ * A nota só chega aqui com o patch em patches/@react-native-ml-kit+text-recognition+2.0.0.patch
+ * e um build novo; sem ele, todas as linhas contam como confiança 1.
  */
+
+/** Linhas com confiança abaixo disso são ignoradas (mesmo valor do config.yaml do OCR em Python). */
+export const CONFIANCA_MINIMA = 0.3;
+
+export type LeituraOcr = {
+  /** Texto final, já limpo, em parágrafos. */
+  texto: string;
+  /** Confiança média das linhas usadas (0 a 1), ou null se nenhuma linha foi aceita. */
+  confianca: number | null;
+  /** Quantas linhas foram lidas e quantas foram descartadas por confiança baixa. */
+  linhasLidas: number;
+  linhasDescartadas: number;
+};
+
+/** A biblioteca não declara o campo; com o patch, cada linha e palavra trazem a confiança. */
+type ComConfianca = { confidence?: number };
+
+function confiancaDaLinha(linha: object): number {
+  const valor = (linha as ComConfianca).confidence;
+  return typeof valor === 'number' ? valor : 1;
+}
+
 export async function lerTexto(caminhoDaFoto: string): Promise<string> {
+  const leitura = await lerTextoDetalhado(caminhoDaFoto);
+  return leitura.texto;
+}
+
+/** Igual ao lerTexto, mas devolve também a confiança da leitura. */
+export async function lerTextoDetalhado(caminhoDaFoto: string): Promise<LeituraOcr> {
   const resultado = await TextRecognition.recognize(caminhoDaFoto);
-  return reconstruir(resultado.blocks);
+
+  let linhasLidas = 0;
+  let linhasDescartadas = 0;
+  const notas: number[] = [];
+
+  const blocosFiltrados = resultado.blocks
+    .map((bloco) => {
+      const linhas = bloco.lines.filter((linha) => {
+        linhasLidas++;
+        const nota = confiancaDaLinha(linha);
+        if (nota < CONFIANCA_MINIMA) {
+          linhasDescartadas++;
+          return false;
+        }
+        notas.push(nota);
+        return true;
+      });
+      return { ...bloco, lines: linhas };
+    })
+    .filter((bloco) => bloco.lines.length > 0);
+
+  const confianca = notas.length ? notas.reduce((soma, n) => soma + n, 0) / notas.length : null;
+  const texto = reconstruir(blocosFiltrados);
+
+  console.log(
+    `OCR: ${linhasLidas} linhas, ${linhasDescartadas} descartadas, confiança média ${
+      confianca === null ? '-' : confianca.toFixed(2)
+    }`,
+  );
+
+  return { texto, confianca, linhasLidas, linhasDescartadas };
 }
 
 const MINUSCULA = 'a-zà-ÿ';

@@ -1,0 +1,19 @@
+diff --git a/node_modules/@react-native-ml-kit/text-recognition/android/src/main/java/com/rnmlkit/textrecognition/TextRecognitionModule.java b/node_modules/@react-native-ml-kit/text-recognition/android/src/main/java/com/rnmlkit/textrecognition/TextRecognitionModule.java
+--- a/node_modules/@react-native-ml-kit/text-recognition/android/src/main/java/com/rnmlkit/textrecognition/TextRecognitionModule.java
++++ b/node_modules/@react-native-ml-kit/text-recognition/android/src/main/java/com/rnmlkit/textrecognition/TextRecognitionModule.java
+@@ -93,6 +93,7 @@
+         WritableMap map = Arguments.createMap();
+ 
+         map.putString("text", line.getText());
++        map.putDouble("confidence", line.getConfidence());
+         if (line.getBoundingBox() != null) {
+             map.putMap("frame", rectToMap(line.getBoundingBox()));
+         }
+@@ -105,6 +106,7 @@
+         for (Text.Element element : line.getElements()) {
+             WritableMap el = Arguments.createMap();
+             el.putString("text", element.getText());
++            el.putDouble("confidence", element.getConfidence());
+             if (element.getBoundingBox() != null) {
+                 el.putMap("frame", rectToMap(element.getBoundingBox()));
+             }
